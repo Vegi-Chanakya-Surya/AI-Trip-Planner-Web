@@ -13,6 +13,117 @@ import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { db } from '@/service/firebaseConfig';
 import { useNavigate } from 'react-router-dom';
 
+  function extractJsonObject(aiText) {
+  if (!aiText || typeof aiText !== "string") {
+    throw new Error("Empty AI response");
+  }
+
+  // If Gemini ever wraps output in ```json ... ``` or ```...```, grab inside
+  const fencedMatch = aiText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  let raw = fencedMatch ? fencedMatch[1] : aiText;
+
+  // Start from first "{" or "["
+  const firstBrace = raw.indexOf("{");
+  const firstBracket = raw.indexOf("[");
+  const startIdxCandidates = [firstBrace, firstBracket].filter(i => i >= 0);
+  const startIdx =
+    startIdxCandidates.length === 0
+      ? -1
+      : Math.min(...startIdxCandidates);
+
+  if (startIdx === -1) {
+    throw new Error("No JSON start found in AI response");
+  }
+
+  raw = raw.slice(startIdx);
+
+  // Normalize curly quotes and invisible chars
+  raw = raw
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "");
+
+  // Remove trailing commas before } or ]
+  raw = raw.replace(/\,(?=\s*[\}\]])/g, "");
+
+  // Fix illegal backslash escapes like "\°" or "\$"
+  raw = raw.replace(/\\(?!["\\/bfnrtu])/g, "");
+
+  // Try 3 increasingly-forgiving parses:
+
+  // Attempt A: try to parse a balanced slice
+  const openChar = raw[0]; // "{" or "["
+  const closeChar = openChar === "{" ? "}" : "]";
+  let depth = 0;
+  let end = -1;
+  let inStr = false;
+  let esc = false;
+
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i];
+
+    if (inStr) {
+      if (esc) {
+        esc = false;
+      } else if (ch === "\\") {
+        esc = true;
+      } else if (ch === '"') {
+        inStr = false;
+      }
+    } else {
+      if (ch === '"') {
+        inStr = true;
+      } else if (ch === openChar) {
+        depth++;
+      } else if (ch === closeChar) {
+        depth--;
+        if (depth === 0) {
+          end = i + 1;
+          break;
+        }
+      }
+    }
+  }
+
+  const tryParse = (str) => JSON.parse(str);
+
+  if (end !== -1) {
+    const candidate = raw.slice(0, end);
+    try {
+      return tryParse(candidate);
+    } catch (_) {
+      // fall through to next attempts
+    }
+  }
+
+  // Attempt B: parse whole cleaned raw
+  try {
+    return tryParse(raw);
+  } catch (_) {
+    // fall through
+  }
+
+  // Attempt C: auto-close any missing braces/brackets at the end
+  const autoCloseFixed = (() => {
+    let txt = raw;
+    const opensObj = (txt.match(/\{/g) || []).length;
+    const closesObj = (txt.match(/\}/g) || []).length;
+    const opensArr = (txt.match(/\[/g) || []).length;
+    const closesArr = (txt.match(/\]/g) || []).length;
+
+    if (opensObj > closesObj) {
+      txt += "}".repeat(opensObj - closesObj);
+    }
+    if (opensArr > closesArr) {
+      txt += "]".repeat(opensArr - closesArr);
+    }
+    return txt;
+  })();
+
+  return tryParse(autoCloseFixed);
+}
+
+
 
 function createTrip() {
   const [place, setPlace] = React.useState(null);
@@ -88,20 +199,46 @@ function createTrip() {
   SaveAiTrip(result.response.text());
 };
 
-  const SaveAiTrip = async (TripData) => {
+  // const SaveAiTrip = async (TripData) => {
 
-    setLoading(true);
+  //   setLoading(true);
+  //   const user = JSON.parse(localStorage.getItem('user'));
+  //   const docID = Date.now().toString();
+  //   await setDoc(doc(db, "trips", docID), {
+  //     userSelection: formData,
+  //     tripdata: JSON.parse(TripData),
+  //     userEmail: user.email,
+  //     id: docID
+  //   });
+  //   setLoading(false);
+  //   navigate(`/view-trip/${docID}`);
+  // }
+
+  const SaveAiTrip = async (TripData) => {
+  setLoading(true);
+  try {
     const user = JSON.parse(localStorage.getItem('user'));
     const docID = Date.now().toString();
+
+    // 🔥 this is the only functional change:
+    const tripJson = extractJsonObject(TripData);
+
     await setDoc(doc(db, "trips", docID), {
       userSelection: formData,
-      tripdata: JSON.parse(TripData),
+      tripdata: tripJson,
       userEmail: user.email,
       id: docID
     });
-    setLoading(false);
+
     navigate(`/view-trip/${docID}`);
+  } catch (err) {
+    console.error("Failed to save trip JSON:", err);
+    alert("Sorry, I couldn't generate a valid trip. Please try again.");
+  } finally {
+    setLoading(false);
   }
+};
+
 
   const GetUserProfile = (tokenInfo) => {
     axios.get(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${tokenInfo.access_token}`, {
