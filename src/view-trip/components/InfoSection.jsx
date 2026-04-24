@@ -29,22 +29,43 @@ if (!trip) {
     })
   }
   return (
-    <div>
-        <img src = {photoUrl} className='h-[340px] w-full object-cover rounded-xl'/>
-        <div className='mt-5 flex justify-between items-center'>
-           <div className='my-5 flex flex-col gap-5'>
-                  <h2 className='text-5xl font-bold text-violet-700'>
-                      {trip?.userSelection?.location || "Location not found"} 
-                      {console.log("Trip received in InfoSection:", trip)}
-                  </h2>
-                  <div className='flex gap-5'>
-                    <h2 className='p-1 px-3 bg-gray-200 rounded-full text-black text-sm md:text-md'> 💰{trip?.userSelection?.budget} Budget</h2>
-                    <h2 className='p-1 px-3 bg-gray-200 rounded-full text-black text-sm md:text-md'>Number of Travelers: 🧳 {trip?.userSelection?.travelers}</h2>
-                    <h2 className='p-1 px-3 bg-gray-200 rounded-full text-black text-sm md:text-md'> 📅 {trip?.userSelection?.days} day(s) Trip </h2>
-                  </div>
+    <div className="bg-card text-card-foreground rounded-xl overflow-hidden shadow-sm border border-border">
+      <div className="w-full">
+        {/* Photo - fallback to placeholder if not available */}
+        <img
+          src={photoUrl || '/placeholder.jpg'}
+          alt={trip?.userSelection?.location || 'Trip image'}
+          className="h-[340px] w-full object-cover"
+        />
+      </div>
+
+      <div className="p-6">
+        <div className="mt-1 mb-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+          <div className="flex-1">
+            <h2 className="text-4xl md:text-5xl font-extrabold text-foreground">
+              {trip?.userSelection?.location || 'Location not found'}
+            </h2>
+            <div className="mt-4 flex flex-wrap gap-3 items-center">
+              <span className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm">💰 {trip?.userSelection?.budget} Budget</span>
+              <span className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm">🧳 {trip?.userSelection?.travelers}</span>
+              <span className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm">📅 {trip?.userSelection?.days} day(s)</span>
             </div>
-            <Button><IoIosSend /></Button>
+          </div>
+
+          <div className="flex-shrink-0">
+            {/* Use primary button styling for clear CTA */}
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90"> 
+              <span className="flex items-center gap-2 px-4 py-2">
+                <IoIosSend className="w-5 h-5" />
+                Share Plan
+              </span>
+            </Button>
+          </div>
         </div>
+
+        {/* Optional description or metadata can go here */}
+        <div className="text-sm text-muted-foreground">Generated itinerary and trip details are stored with your account. Use the buttons above to share or export.</div>
+      </div>
     </div>
   )
 }

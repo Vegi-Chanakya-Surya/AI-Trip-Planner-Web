@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import GooglePlacesAutocomplete from 'react-google-places-autocomplete'
+import StyledGooglePlacesAutocomplete from '@/components/custom/StyledGooglePlacesAutocomplete'
 import { Input } from '@/components/ui/input'
 import { AI_PROMPT, SelectBudgetOptions, SelectTravelesList } from '@/constants/options';
 import { Button } from '@/components/ui/button';
@@ -266,26 +266,14 @@ function createTrip() {
           <h2 className='text-xl my-3 font-medium'>
             I want to go to...
           </h2>
-          <GooglePlacesAutocomplete
-  apiKey={import.meta.env.VITE_GOOGLE_PLACE_API_KEY}
-  selectProps={{
-    place,
-    onChange: (value) => {
-  setPlace(value);console.log(value);
-  handleInputChange('location', value?.label || '');
-},
-    placeholder: 'Search for a location',
-    styles: {
-      control: (provided) => ({
-        ...provided,
-        borderWidth: '2px',
-        borderColor: '#5f069f',
-        '&:hover': { borderColor: '#7a0ee3' },
-        boxShadow: 'none',
-      })
-    }
-  }}
-/>
+          <StyledGooglePlacesAutocomplete
+            value={place}
+            onChange={(value) => {
+              setPlace(value);
+              console.log(value);
+              handleInputChange('location', value?.label || '');
+            }}
+          />
         </div>
 
         <div> {/*Duration input*/}

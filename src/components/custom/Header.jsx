@@ -8,9 +8,9 @@ import { googleLogout, useGoogleLogin } from '@react-oauth/google'
 import { Dialog, DialogContent, DialogHeader, DialogDescription } from '@/components/ui/dialog'
 import { BsGoogle } from "react-icons/bs"
 import axios from 'axios'
+import ThemeToggle from './ThemeToggle'
 
 function Header() {
-
   const [user, setUser] = useState(null)
   const [openDialog, setOpenDialog] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -47,26 +47,27 @@ function Header() {
   }
 
   return (
-    <div className='p-3 shadow-sm flex justify-between items-center px-5'>
+    <div className='p-3 shadow-sm flex justify-between items-center px-5 bg-background border-b border-border transition-colors duration-200'>
       <div className='flex items-center gap-2'>
         <img src='/logo.svg' alt="Logo" className='h-8 w-8' />
-        <h2 className='font-bold text-2xl'>AI Trip Planner</h2>
+        <h2 className='font-bold text-2xl text-foreground transition-colors duration-200'>AI Trip Planner</h2>
       </div>
 
-      <div>
+      <div className="flex items-center gap-4">
+        <ThemeToggle />
         {user ? (
           <div className='flex items-center gap-5'>
             
             {location.pathname === '/my-trips' && (
               <a href="/create-trip">
-                <Button variant='outline' className='rounded-full text-violet-700'>
+                <Button variant='outline' className='rounded-full text-violet-700 dark:text-violet-400'>
                   + Create Trip
                 </Button>
               </a>
             )}
 
             <a href="/my-trips">
-              <Button variant='outline' className='rounded-full text-violet-700'>
+              <Button variant='outline' className='rounded-full text-violet-700 dark:text-violet-400'>
                 My Trips
               </Button>
             </a>
@@ -80,9 +81,9 @@ function Header() {
                   className="h-10 w-10 rounded-full object-cover cursor-pointer"
                 />
               </PopoverTrigger>
-              <PopoverContent className='p-4'>
-                <h2>{user?.name}</h2>
-                <p className='text-sm text-gray-500'>{user?.email}</p>
+              <PopoverContent className='p-4 bg-background border-border'>
+                <h2 className="text-foreground">{user?.name}</h2>
+                <p className='text-sm text-muted-foreground'>{user?.email}</p>
                 <Button className='w-full mt-3 cursor-pointer' onClick={() => {
                   googleLogout()
                   localStorage.clear()
